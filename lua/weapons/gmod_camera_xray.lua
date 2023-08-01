@@ -14,17 +14,37 @@ SWEP.Description = "Captures images of everything MINUS the map geometry, with t
 --     HOOKS      --
 --------------------
 
----@class XRays
----@field private _list { string : GIMaterial }
-local XRays = {}
-XRays._list = {}
+if CLIENT then
+	---@class XRays
+	---@field path string
+	---@field next string?
+	local XRays = {}
+	XRays.path = "xray_camera/"
+	XRays.next = nil
 
-local function GetXRays()
+	concommand.Add("png_xray", function(_, _, _, argStr)
+		XRays.next = #argStr > 0 and argStr or util.DateStamp()
+	end)
 
-end
+	hook.Add("PreDrawOpaqueRenderables", "XRayCamera.Capture.PreDraw", function()
+		if XRays.next then
+			render.ClearDepth()
+			render.Clear(0, 0, 0, 0)
+		end
+	end)
 
-function SWEP:MakeXRay()
-
+	hook.Add("PostRender", "XRayCamera.Capture.PostRender", function()
+		if XRays.next then
+			file.Write(XRays.path .. XRays.next .. ".png", render.Capture({
+				format = "png",
+				x = 0,
+				y = 0,
+				w = ScrW(),
+				h = ScrH()
+			}))
+			XRays.next = nil
+		end
+	end)
 end
 
 ----------------
