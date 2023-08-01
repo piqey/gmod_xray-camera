@@ -36,32 +36,33 @@ if CLIENT then
 	---@param name string? The file name the capture will be saved to
 	local function CaptureImage(name)
 		local path = XRays.path .. name .. ".png"
-		local cap = render.Capture({
+
+		file.Write(path, render.Capture({
 			format = "png",
 			x = 0,
 			y = 0,
 			w = ScrW(),
 			h = ScrH()
-		})
-
-		file.Write(path, cap)
-		MsgC(msg_orange, "[X-ray Camera] ", color_white, "Image captured and saved to ", msg_yellow, "\"" .. path .. "\" (" .. string.NiceSize(file.Size(path, "DATA")) .. ")")
+		}))
+		MsgC(msg_orange, "[X-ray Camera] ", color_white, "Image captured and saved to ", msg_yellow, "\"" .. path .. "\" (" .. string.NiceSize(file.Size(path, "DATA")) .. ")\n")
 	end
 
 	local lastrun
 
 	hook.Add("PreDrawOpaqueRenderables", "XRayCamera.Capture.PreDraw", function(isDrawingDepth, _, isDraw3DSkybox)
-		if isDrawingDepth or isDraw3DSkybox then
-			return true
-		elseif XRays.next and lastrun ~= CurTime() then
+		if XRays.next and lastrun ~= CurTime() then
 			render.SetWriteDepthToDestAlpha(false)
 			render.Clear(0, 0, 0, 0)
 			lastrun = CurTime()
 		end
+
+		-- if isDrawingDepth or isDraw3DSkybox then
+		-- 	return true
+		-- end
 	end)
 
-	hook.Add("PostDrawOpaqueRenderables", "XRayCamera.Capture.PostDraw", function(_, _, _)
-		if XRays.next then
+	hook.Add("PostDrawOpaqueRenderables", "XRayCamera.Capture.PostDraw", function(isDrawingDepth, _, isDraw3DSkybox)
+		if XRays.next --[[and not (isDrawingDepth or isDraw3DSkybox)]] then
 			render.SetWriteDepthToDestAlpha(true)
 			CaptureImage(XRays.next)
 			XRays.next = nil
